@@ -61,4 +61,4 @@ def serve(host, port):
     Start the local simdash server.
     """
 
-    app.run(host=host, port=port)
+    app.run(host=host, port=port, debug=True)
