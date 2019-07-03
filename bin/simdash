@@ -1,0 +1,8 @@
+#!/bin/bash
+# Starting point for the simdash
+
+if [[ -n "$SIMDASH_DEBUG" ]] ; then
+    exec python -m simdash.cli "$@"
+fi
+
+exec python -O -m simdash.cli "$@"
