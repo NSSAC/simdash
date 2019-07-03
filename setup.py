@@ -28,7 +28,8 @@ setup(
         "logbook",
 
         "flask",
-        "altair"
+        "altair",
+        "pandas"
     ],
 
     url="http://github.com/NSSAC/%s" % package_name,

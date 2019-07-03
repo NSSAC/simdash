@@ -9,7 +9,7 @@ import click_completion
 
 from . import cli_main
 
-import simdash.hello
+import simdash.serve
 
 if __name__ == "__main__":
     click_completion.init()
