@@ -21,6 +21,7 @@ class Database:
     Attributes:
         conn (sqlite3 connection): The connection to the database file
     """
+    
     def __init__(self, filename):
         """
         Initializes the database connection and meta table.

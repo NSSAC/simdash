@@ -36,7 +36,6 @@ class Table:
             r_column (str): the name of the real time column so that the append statement can
                 understand what is being input
         """
-
         self.table_name = table_name
         self.conn = conn
         self.l_column = l_column
