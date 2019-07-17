@@ -4,58 +4,65 @@ Tables are associated with specific tables in an SQL database.
 Tables allow users to append to these SQL tables in a variety of ways as well as
 turn the table into a pandas dataframe and access the table's length.
 """
+
+import json
 import pandas as pd
 
 class Table:
-
     """
-    Tables are associated with specific tables in an SQL database.
+    A Table is temporal dataframe with values associated with changing time.
 
-    Tables allow users to append to these SQL tables in a variety of ways as well as
-    turn the table into a pandas dataframe and access the table's length.
+    A Table is a collection of values associated with time.
+    It is the data structure used to store changing values.
 
     Attributes:
-        table_name (str): the name of the table within the SQL file
-        conn (sqlite3.connection): holds the connection to the SQL file
-        l_column (str): holds the name of the logical time column
-        r_column (str): holds the name of the real time column
-        logical_time (float): holds the value of the highest logical time in the table
-            so that when an append is called without specifying the l_time or logical time
-            column, this is incremented by 1 and attached to the data point
+        table_name: the name of the table
+        columns: list of data columns
+        l_column: the name of the logical time column
+        r_column: the name of the real time column
     """
 
     def __init__(self, conn, table_name, l_column, r_column):
-        """
-        Initializes the Table which points to a specific table in an SQL database.
-
-        Args:
-            conn (sqlite3.connection): the connection to the SQL file
-            table_name (str): the name of the table that you wish to access
-            l_column (str): the name of the logical time column so that the append statement
-                can understand what is being input
-            r_column (str): the name of the real time column so that the append statement can
-                understand what is being input
-        """
         self.table_name = table_name
-        self.conn = conn
         self.l_column = l_column
         self.r_column = r_column
-        self.logical_time = 0.0
-        with self.conn: # checks for highest logical time and adjusts
-            c = self.conn.cursor()
-            sql_string_logic_time = "SELECT {lc} FROM {tn}".format(lc=self.l_column, tn=self.table_name)
-            for row in c.execute(sql_string_logic_time):
-                if row[0] > self.logical_time:
-                    self.logical_time = row[0]
 
-    def append(self, l_time=None, r_time=None, **kwargs):
+        self.conn = conn
+
+        # Load the column names
+        with self.conn:
+            sql = f"SELECT columns from meta_table where table_name = ?"
+            cur = self.conn.execute(sql, (self.table_name,))
+            columns = cur.fetchone()[0]
+            columns = json.loads(columns)
+            self.columns = columns
+
+        # Load the max logical time
+        with self.conn:
+            sql = f"SELECT max({self.l_column}) FROM {self.table_name}"
+            cur = self.conn.execute(sql)
+            try:
+                self.logical_time = cur.fetchone()[0]
+            except TypeError:
+                self.logical_time = 0.0
+
+        # Construct the sql
+        sql = f"INSERT INTO {self.table_name} VALUES (%s)"
+        sql = sql % (",".join(["?"] * len(self.columns)))
+        self.insert_sql = sql
+
+    def append(self, l_time=None, r_time=None, *args, **kwargs):
         """
-        Appends to the table the desired data.
+        Append a row of values to the table.
 
         Uses column names in the kwargs, use l_time and r_time to specify a certain time quality
         If the Logical time is not specified, the highest logical time in the table
         will be incremented by 1.  If real time is not specified, the real time
         will be taken as a pandas timestamp with the current local time.
+
+        logical_time (float): holds the value of the highest logical time in the table
+            so that when an append is called without specifying the l_time or logical time
+            column, this is incremented by 1 and attached to the data point
 
         Args:
             l_time (float): the logical time of the data point that is being uploaded,
@@ -65,67 +72,43 @@ class Table:
                 if not specified: this defaults to the pandas.Timestamp("now").timestamp()
             **kwargs: in the form of column_name=value, allows input into the table in any
                 order as long as the column is specified
-        Raises:
-            ValueError: If the keyword l_time and the column for logical time are both used in one function call
-            ValueError: If the keyword r_time and the column for real time are both used in one function call
-        Returns:
-            None
         """
-        columns = []
-        keys_list = []
-        values_list = []
-        for key, value in kwargs.items():
-            columns.append(key)
 
-        if r_time and self.r_column in columns:
-            raise ValueError("Too many r_time arguments, must specify r_time only once in the function call")
-        if l_time and self.l_column in columns:
-            raise ValueError("Too many l_time arguments, must specify l_time only once in the function call")
-        if r_time is None and self.r_column not in columns: # no real time specified so real time is now
-            keys_list.append(self.r_column)
-            values_list.append(pd.Timestamp("now").timestamp())
-        elif r_time is None and self.r_column in columns: # r_time was none, but value was passed in kwargs
-            keys_list.append(self.r_column)
-            values_list.append(kwargs[self.r_column])
-        else: #r_time was specified
-            keys_list.append(self.r_column)
-            values_list.append(r_time)
-        if l_time is None and self.l_column not in columns: # no logical time specified so logical_time increments 1.0
-            self.logical_time += 1.0
-            keys_list.append(self.l_column)
-            values_list.append(self.logical_time)
-        elif l_time is None and self.l_column in columns: # l_time was none, but value was passed in kwargs
-            the_time = kwargs[self.l_column]
-            if the_time > self.logical_time:
-                self.logical_time = the_time 
-            keys_list.append(self.l_column)
-            values_list.append(the_time)
-        else: # l_time was passed in the header
-            if l_time > self.logical_time:
-                self.logical_time = l_time # marks l_time to this new value
-            keys_list.append(self.l_column)
-            values_list.append(l_time)
-        for key, value in kwargs.items():
-            if key in (self.l_column, self.r_column):
-                pass # these values were already dealt with in the above if/else statements
-            else:
-                keys_list.append(key)
-                values_list.append(value)
-        sql_string = "INSERT INTO {tn}(".format(tn=self.table_name)
-        for col in keys_list:
-            if col == keys_list[-1]:
-                sql_string += "%s) VALUES(" %col
-            else:
-                sql_string += "%s, " %col
-        for i, val in enumerate(values_list, 1):
-            if i == len(values_list):
-                sql_string += "?);"
-            else:
-                sql_string += "?, "
-        values_tuple = tuple(values_list)
+        if l_time is not None:
+            if self.l_column in kwargs:
+                raise ValueError(f"Only one of l_time or {self.l_column} must be specified")
+            kwargs[self.l_column] = l_time
+
+        if r_time is not None:
+            if self.r_column in kwargs:
+                raise ValueError(f"Only one of r_time or {self.r_column} must be specified")
+            kwargs[self.r_column] = r_time
+
+        for k, v in zip(self.columns[2:], args):
+            if k in kwargs:
+                raise ValueError(f"Value for columne {k} is specific twice")
+            kwargs[k] = v
+
+        # Convert rtime to timestamp
+        r_time = kwargs.get(self.r_column, None)
+        if r_time is None:
+            r_time = pd.Timestamp("now")
+        if not isinstance(r_time, pd.Timestamp):
+            r_time = pd.Timestamp(r_time)
+        r_time = r_time.timestamp()
+        kwargs[self.r_column] = r_time
+
+        # Set default l_time
+        if self.l_column not in kwargs:
+            kwargs[self.l_column] = self.logical_time + 1.0
+        self.logical_time = kwargs[self.l_column]
+
+        # Construct the parameters
+        params = (kwargs.get(param, None) for param in self.columns)
+
+        # Execute the sql
         with self.conn:
-            c = self.conn.cursor()
-            c.execute(sql_string, values_tuple)
+            self.conn.execute(self.insert_sql, params)
 
     def len(self):
         """
