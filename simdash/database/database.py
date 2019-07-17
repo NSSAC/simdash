@@ -5,10 +5,12 @@ A Database initializes the meta_table and allows the creation of additional tabl
 within the given database file with the make_table function.  These additional tables
 can then be retrieved and edited as a Tab with the get_table function.
 """
+
 import json
 import sqlite3
 import warnings
-import table
+
+from .table import Table
 
 class Database:
     """
@@ -136,7 +138,7 @@ class Database:
                     r_time_ = str(row[1]) # keeping track of the logical and real time column names
             else:
                 raise ValueError("This table hasn't been made yet. Make this table before getting it")
-        the_returned_tab = table.Table(self.conn, table_name, l_time_, r_time_)
+        the_returned_tab = Table(self.conn, table_name, l_time_, r_time_)
         return the_returned_tab
 
     def remove_table(self, table_name):
