@@ -1,0 +1,39 @@
+
+<!Doctype html>
+<html>
+  <head>
+    <title>Trial1</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.13/semantic.min.css">
+    <meta http-equiv="refresh" content="30">
+  </head>
+  <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.13/semantic.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/vega@5.4.0"></script>
+     <script src="https://cdn.jsdelivr.net/npm/vega-lite@3.3.0"></script>
+     <script src="https://cdn.jsdelivr.net/npm/vega-embed@4.2.0"></script>
+     <div class="ui simple grid">
+       <div class="five wide column">
+	 <div id="visZilch"></div>
+	 <script type="text/javascript">
+	   var yourVlSpec = {{ chart_list[0]|safe }}
+	   vegaEmbed('#visZilch', yourVlSpec);
+	 </script>
+       </div>
+       {% for chart in chart_list %}
+       {% if loop.index0 in num_list %}
+       <div class="ten wide column">
+	 <div id="vis{{ loop.index0 }}"></div>
+	 <script type="text/javascript">
+	   var yourVlSpec = {{ chart|safe }}
+	   vegaEmbed('#vis{{ loop.index0 }}', yourVlSpec);
+	 </script>
+       </div>
+       <div class="one wide bottom aligned column">
+	 <h1>Chart {{loop.index0}}</h1>
+       </div>
+       {% endif %}
+       {% endfor %}
+     </div>
+  </body>
+</html>

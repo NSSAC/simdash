@@ -6,7 +6,9 @@ It is the data structure used to store changing values.
 """
 
 import json
+import sqlite3
 import pandas as pd
+
 
 class Table:
     """
@@ -19,11 +21,13 @@ class Table:
         table_name: the name of the table
         columns: list of data columns
     """
-    def __init__(self, conn, table_name, l_column, r_column):
+    def __init__(self, filename, table_name, l_column, r_column):
         self.table_name = table_name
         self.l_column_ = l_column
         self.r_column_ = r_column
-        self.conn_ = conn
+
+        self.conn_ = sqlite3.connect(filename)
+        self.conn_.execute("PRAGMA journal_mode=wal")
 
         # Load the column names
         with self.conn_:
@@ -107,7 +111,7 @@ class Table:
 
     def len(self):
         """
-        Get the length of the table which is equivalent to the number of datapoints
+        Get the length of the table which is equivalent to the number of datapoints.
 
         Returns:
             the_length (int): the length of the table

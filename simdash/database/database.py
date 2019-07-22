@@ -1,5 +1,5 @@
 """
-Creates a Database based upon a given database file name
+Creates a Database based upon a given database file name.
 
 A Database initializes the meta_table and allows the creation of additional tables
 within the given database file with the make_table function.  These additional tables
@@ -38,6 +38,8 @@ class Database:
                     curs.execute(create_table_string)
             except sqlite3.Error as err:
                 print("SQLite error: %s" %err)
+        self.filename = filename
+        self.conn.execute("PRAGMA journal_mode=wal;")
 
     def make_table(self, table_name, columns, dtypes, vtypes):
         """
@@ -88,9 +90,9 @@ class Database:
             curs.execute(sql_insert_meta_string, insert_meta_tuple)
 
             # Create the table
-            sql_create_table_string = f"CREATE TABLE IF NOT EXISTS {table_name}({columns[0]} FLOAT);"
+            sql_create_table_string = f"CREATE TABLE IF NOT EXISTS '{table_name}'({columns[0]} FLOAT);"
             curs.execute(sql_create_table_string)
-            for i, value in enumerate(columns[1:], 1): 
+            for i, value in enumerate(columns[1:], 1):
                 sql_alter_table = 'ALTER TABLE {tn} ADD COLUMN "{cn}" "{ct}";'
                 curs.execute(sql_alter_table.format(tn=table_name, cn=value, ct=dtypes[i]))
             return
@@ -117,10 +119,10 @@ class Database:
             # Keep track of logical time and real time col names
             if tup is not None:
                 l_time_ = str(tup[1])
-                r_time_ = str(tup[2]) 
+                r_time_ = str(tup[2])
             else:
                 raise ValueError("This table hasn't been made yet. Make this table before getting it")
-        the_returned_tab = Table(self.conn, table_name, l_time_, r_time_)
+        the_returned_tab = Table(self.filename, table_name, l_time_, r_time_)
         return the_returned_tab
 
     def remove_table(self, table_name):
@@ -136,3 +138,31 @@ class Database:
             sql_delete_from_meta = 'DELETE FROM meta_table WHERE table_name="{tn}"'.format(tn=table_name)
             curs.execute(sql_drop_table)
             curs.execute(sql_delete_from_meta)
+
+    def get_table_list(self):
+        """
+        Get a list of the tables in the database.
+        """
+        tab_list = []
+        with self.conn:
+            sql = "SELECT table_name FROM meta_table;"
+            curs = self.conn.cursor()
+            for row in curs.execute(sql):
+                tab_list.append(row[0])
+        return tab_list
+
+    def get_tables_and_info(self):
+        """
+        Get a tuple containing a list of tables, a list of columns, and a list of vtypes in the database.
+        """
+        tab_list = []
+        col_list = []
+        vtype_list = []
+        with self.conn:
+            sql = "SELECT table_name, columns, vtypes from meta_table;"
+            curs = self.conn.cursor()
+            for row in curs.execute(sql):
+                tab_list.append(row[0])
+                col_list.append(json.loads(row[1]))
+                vtype_list.append(json.loads(row[2]))
+        return (tab_list, col_list, vtype_list)
