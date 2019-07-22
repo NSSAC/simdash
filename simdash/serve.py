@@ -59,7 +59,7 @@ def pids(databasename):
     Display the relative PID information from the database file.
     """
     databasename = "/%s" %databasename
-    the_charts = viz.get_real_time_charts(databasename)
+    the_charts = viz.get_pid_charts(databasename)
     num_list = list(range(len(the_charts)))
     return render_template("temp1.html", chart_list=the_charts, num_list=num_list)
         
