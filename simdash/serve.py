@@ -2,13 +2,16 @@
 SimDash server.
 """
 
+import time
+
 import click
-from flask import Flask
+from flask import Flask, render_template
 
 import pandas as pd
 import altair as alt
 
 from . import cli_main
+from .viz import viz
 
 app = Flask(__name__)
 
@@ -50,7 +53,17 @@ def route_():
 
     return fmt % (chart.to_json(),)
 
-
+@app.route("/pids/<path:databasename>/")
+def pids(databasename):
+    """
+    Display the relative PID information from the database file.
+    """
+    databasename = "/%s" %databasename
+    the_charts = viz.get_real_time_charts(databasename)
+    num_list = list(range(len(the_charts)))
+    return render_template("temp1.html", chart_list=the_charts, num_list=num_list)
+        
+    
 @cli_main.command()
 @click.option("-h", "--host", default="localhost",
               help="Host to bind to.")
