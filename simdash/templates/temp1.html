@@ -13,13 +13,6 @@
      <script src="https://cdn.jsdelivr.net/npm/vega-lite@3.3.0"></script>
      <script src="https://cdn.jsdelivr.net/npm/vega-embed@4.2.0"></script>
      <div class="ui simple grid">
-       <div class="five wide column">
-	 <div id="visZilch"></div>
-	 <script type="text/javascript">
-	   var yourVlSpec = {{ chart_list[0]|safe }}
-	   vegaEmbed('#visZilch', yourVlSpec);
-	 </script>
-       </div>
        {% for chart in chart_list %}
        {% if loop.index0 in num_list %}
        <div class="ten wide column">

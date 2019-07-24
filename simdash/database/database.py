@@ -1,9 +1,9 @@
 """
-Creates a Database based upon a given database file name.
+A Database is a collection of Tables with a variable meta_table that holds information about all the other tables.
 
-A Database initializes the meta_table and allows the creation of additional tables
-within the given database file with the make_table function.  These additional tables
-can then be retrieved and edited as a Tab with the get_table function.
+A Database can create Tables while keeping track of each Table's columns and their respective Altair variable types.
+This information is stored in the Database's "meta_table" and allows for the simple addition of data points
+to each table.
 """
 
 import json
@@ -14,11 +14,11 @@ from .table import Table
 
 class Database:
     """
-    A Database is a collection of Tables with a variable meta_table that holds information for the other tables.
+    A Database is a collection of Tables with a variable meta_table that holds information about all the other tables.
 
-    A Database can create Tables and keep track of each Table's columns, variable types for Altair charting,
-    as well as which variables are the logical time and real time.  This information is stored in the Database's
-    "meta_table" and allows for simple addition of data points to each table.
+    A Database can create Tables while keeping track of each Table's columns and their respective Altair variable types.
+    This information is stored in the Database's "meta_table" and allows for the simple addition of data points
+    to each table.
     """
     def __init__(self, filename):
         """
@@ -43,12 +43,10 @@ class Database:
 
     def make_table(self, table_name, columns, dtypes, vtypes):
         """
-        Insert a row into meta table with this table's information and create the according Table.
+        Make a Table with the corresponding columns and add this new table's information to the meta table.
 
-        Insert a row into the meta table containing the columns, datatypes, and variable types of
-        the table "table_name". Then this Table is also created.  The first item of columns must
-        be the variable name that is used for logical time, and the second item must be the variable
-        name that is used for real time.
+        The first item in columns must be the variable name that is used for logical time, and the second
+        item must be the variable name that is used for real time.
         Args:
             table_name: Name of your desired table. Proper care should be taken to ensure that the same table
                  is not made twice
@@ -59,11 +57,6 @@ class Database:
                 columns.
             vtypes (list(str)): The variable types or Altair encodings of each of the passed in columns, must be 'Q',
                 'T', 'O', or 'N'.  Each index of vtypes should match with the column at that index in columns.
-        Raises:
-            ValueError: If the length of columns, vtypes or dtypes is different
-            ValueError: If any dtype is not 'INT', 'FLOAT' or 'TEXT'
-            ValueError: If any vtype is not 'N', 'O', 'T', or 'Q'
-            UserWarning: If the table has already been created in the file
         """
         possible_dtype_list = ["INT", "FLOAT", "TEXT"]
         possible_vtype_list = ["Q", "T", "O", "N"]
@@ -99,14 +92,12 @@ class Database:
 
     def get_table(self, table_name):
         """
-        Get the table object with the given table name.
+        Get the Table with the specified name.
 
-        Often used so that a table object can be accessed, appended, and turned into a pandas DataFrame.
+        Often used so that a Table can be accessed, appended, or turned into a pandas DataFrame.
 
         Args:
             table_name: the name of the table that you want to access
-        Raises:
-            ValueError: If the Table has not been made before calling get_table
         Returns:
             the_returned_tab (Table): The Table object associated with the passed table_name
         """
@@ -127,7 +118,7 @@ class Database:
 
     def remove_table(self, table_name):
         """
-        Remove the table from the SQL file and delete its information from the meta_table file.
+        Remove the table and delete its information from the meta_table file.
 
         Args:
             table_name: the name of the table that will be deleted

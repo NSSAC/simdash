@@ -20,28 +20,31 @@ def get_pid_charts(db_name):
         dframe.iloc[:, 1] = dframe.iloc[:, 1].map(lambda x: datetime.datetime.fromtimestamp(x))
         the_mem_chart = make_mem_chart(dframe)
         the_cpu_chart = make_cpu_chart(dframe)
-        final_chart = alt.layer(the_cpu_chart, the_mem_chart)
+        final_chart = alt.layer(the_cpu_chart, the_mem_chart).properties(width=650, height=400)
         chart_list.append(final_chart.to_json())
     return chart_list
 
 def make_mem_chart(dframe):
     """
-    Make a chart assuming that x is real_time and y is memory percent, this chart has a right side y axis.
+    Make a chart with x as real_time and y as memory percentage, this chart has a right side y axis.
     """
     ret_chart = alt.Chart(dframe).mark_line(interpolate='basis', color='blue').encode(
-        x='real_time:T',
-        y=alt.Y('mem_percent:Q', axis=alt.Axis(orient='right')),
+        x=alt.X('yearmonthdatehoursminutes(real_time):T', title="Real Time",
+                axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+        y=alt.Y('mem_percent:Q', title="Memory Percentage",
+                axis=alt.Axis(orient='right', labelFontSize=12.0, titleFontSize=14.0)),
         tooltip=['real_time:T', 'mem_percent:Q', 'cpu_percent:Q']
     )
     return ret_chart
 
 def make_cpu_chart(dframe):
     """
-    Make a chart assuming that x is real_time and y is cpu percentage
+    Make a chart with x as real_time and y as cpu percentage.
     """
     ret_chart = alt.Chart(dframe).mark_line(interpolate='basis', color='red').encode(
-        x='real_time:T',
-        y=alt.Y('cpu_percent:Q', axis=alt.Axis(orient='left')),
+        x=alt.X('real_time:T'),
+        y=alt.Y('cpu_percent:Q', title="CPU Percentage",
+                axis=alt.Axis(orient='left', labelFontSize=12.0, titleFontSize=14.0)),
         tooltip=['real_time:T', 'mem_percent:Q', 'cpu_percent:Q']
     )
     return ret_chart
