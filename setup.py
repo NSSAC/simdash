@@ -30,6 +30,8 @@ setup(
         "flask",
         "altair",
         "pandas",
+
+        "toml",
     ],
 
     url="http://github.com/NSSAC/%s" % package_name,

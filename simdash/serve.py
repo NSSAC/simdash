@@ -14,6 +14,8 @@ from . import cli_main
 from .viz import viz
 
 app = Flask(__name__)
+config_path = "a"
+db_path = "b"
 
 @app.route("/")
 def route_():
@@ -50,7 +52,8 @@ def route_():
   </body>
 </html>
     """.strip()
-
+    print(config_path)
+    print(db_path)
     return fmt % (chart.to_json(),)
 
 @app.route("/pids/<path:databasename>/")
@@ -69,9 +72,14 @@ def pids(databasename):
               help="Host to bind to.")
 @click.option("-p", "--port", default=8888,
               help="Port to bind to.")
-def serve(host, port):
+@click.option("-c", "--config", help="Path to config file")
+@click.option("-d", "--database", help="Path to database file")
+def serve(host, port, config, database):
     """
     Start the local simdash server.
     """
-
+    global db_path
+    global config_path
+    db_path = database
+    config_path = config
     app.run(host=host, port=port, debug=True)
