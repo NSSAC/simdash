@@ -1,0 +1,11 @@
+{% extends "toolbar_template.html" %}
+{% block side_column %}
+<h3 style="color:white;">Here is your recent system usage!</h3>
+{% endblock %}
+{% block body_block %}
+<div id="vis_chart"></div>
+<script type="text/javascript">
+  var yourVlSpec = {{ the_chart|safe }}
+  vegaEmbed('#vis_chart', yourVlSpec);
+</script>
+{% endblock %}

@@ -57,7 +57,7 @@ class Table:
         """
         Append a row of values to the table.
 
-        Uses column names in the kwargs, use l_time and r_time to specify a certain time quality
+        Use column names in the kwargs, use l_time and r_time to specify a desired time
         If the Logical time is not specified, the highest logical time in the table
         will be incremented by 1.  If real time is not specified, the real time
         will be taken as a pandas timestamp with the current local time.
@@ -123,7 +123,7 @@ class Table:
 
     def to_pandas(self):
         """
-        Creates and returns a Pandas DataFrame (reindexed so that any of its values can be used in charts).
+        Create and return a Pandas DataFrame (reindexed so that any of its values can be used in charts).
 
         Returns:
             dframe (pd.DataFrame): a Pandas DataFrame with all of the data from the table of the SQL file

@@ -1,0 +1,14 @@
+{% extends "toolbar_template.html" %}
+{% block side_column %}
+<div style="color:white;">
+  User: <input type="text" name="UserValue" style="width:85%;"><br>
+  PID: <input type="text" name="PIDValue" style="width:85%"><br><br>
+  <input type="submit" value="Add To Charts" style="width:85%"><br><br>
+</div>
+<div style="color:white; width:85%; text-align: center;">
+  <h3> Your Charts <h3>
+</div>
+{% endblock %}
+{% block body_block %}
+<h1 style="text-align: center;"> Error! No database file specified! <h1>
+{% endblock %}

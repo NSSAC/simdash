@@ -7,11 +7,11 @@ x = "real_time"
 y = "mem_percent"
 
 [[tab]]
-table_name = "rootpid301"
+table_name = "rootpid40"
 mark = "line"
 title = "CPU and Memory Usage Over Time"
 [tab.encode]
 x = "real_time"
 y = "cpu_percent"
-y2 = "mem_percent:Q"
+y2 = "mem_percent"
 

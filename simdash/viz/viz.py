@@ -2,14 +2,44 @@
 The visualization interface for creating charts from a database.
 """
 import datetime
+import os
 
 import altair as alt
+import pandas as pd
 
 from ..database import database
 
+def make_pid_chart(db_name, table_name):
+    """
+    Returns a CPU and memory chart directly from a getpid database.
+
+    Args:
+        db_name: path to database file
+        table_name: name of table within database file to create a PID chart from
+    """
+    the_db = database.Database(db_name)
+    the_tab = the_db.get_table(table_name)
+    dframe = the_tab.to_pandas()
+    dframe.iloc[:, 1] = dframe.iloc[:, 1].map(lambda x: datetime.datetime.fromtimestamp(x))
+    columns = list(dframe.columns)
+    dframe2 = dframe.melt(id_vars=[columns[0], columns[1]], var_name='usage', value_name='percent')
+    
+    some_chart = alt.Chart(dframe2).mark_line(interpolate='basis').encode(
+            x=alt.X('yearmonthdatehoursminutes(real_time):T', title="Real Time",
+                    axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+            y=alt.Y('percent:Q', title="Percentage Used",
+                    axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+            color=alt.Color('usage:O', scale=alt.Scale(range=['salmon', 'steelblue'])),
+            tooltip=['usage:O', 'real_time:T']
+        ).properties(width=650, height=400)
+    return some_chart.to_json()
+
 def get_pid_charts(db_name):
     """
-    Returns the memory and cpu charts layered on top of each other for easy viewing.
+    Returns the a list of layered memory and cpu charts, one for every PID in the database.
+
+    Args:
+        db_name: path to the database file
     """
     chart_list = []
     the_db = database.Database(db_name)
@@ -18,10 +48,21 @@ def get_pid_charts(db_name):
         the_table = the_db.get_table(tab)
         dframe = the_table.to_pandas()
         dframe.iloc[:, 1] = dframe.iloc[:, 1].map(lambda x: datetime.datetime.fromtimestamp(x))
+        columns = list(dframe.columns)
+        dframe2 = dframe.melt(id_vars=[columns[0], columns[1]], var_name='usage', value_name='percent')
+        some_chart = alt.Chart(dframe2).mark_line(interpolate='basis').encode(
+            x=alt.X('yearmonthdatehoursminutes(real_time):T', title="Real Time",
+                    axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+            y=alt.Y('percent:Q', title="Percentage Used",
+                    axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+            color=alt.Color('usage:O', scale=alt.Scale(range=['salmon', 'steelblue'])),
+            tooltip=['usage:O', 'real_time:T']
+        ).properties(width=650, height=400)
         the_mem_chart = make_mem_chart(dframe)
         the_cpu_chart = make_cpu_chart(dframe)
         final_chart = alt.layer(the_cpu_chart, the_mem_chart).properties(width=650, height=400)
-        chart_list.append(final_chart.to_json())
+        final_chart2 = final_chart & some_chart
+        chart_list.append(some_chart.to_json())
     return chart_list
 
 def make_mem_chart(dframe):
@@ -49,40 +90,104 @@ def make_cpu_chart(dframe):
     )
     return ret_chart
 
-def get_real_time_charts(db_name):
+def get_system_charts(db_name):
     """
-    Create all the charts from a simdash database using the real time variable on the x axis.
+    Produce system charts from file where getpid --system is run.
+    
+    Produce charts for cpu load, average load, physical memory usage, and swap memory usage.
+    Args:
+        db_name: Path to the database file
+    Returns:
+        One Altair chart object containing each of the graphs hconcat and vconcat together
     """
     the_db = database.Database(db_name)
-    tup = the_db.get_tables_and_info()
-    tab_list = tup[0]
-    col_list = tup[1]
-    vtype_list = tup[2]
-    chart_list = []
-    for i in range(len(tab_list)):
-        the_table = the_db.get_table(tab_list[i])
-        cols = col_list[i]
-        vtypes = vtype_list[i]
-        dframe = the_table.to_pandas()
-        dframe.iloc[:, 1] = dframe.iloc[:, 1].map(lambda x: datetime.datetime.fromtimestamp(x))
-        for j in range(2, len(cols)):
-            chart_list.append(make_generic_circle_chart(dframe, cols[1], vtypes[1], cols[j], vtypes[j]))
-    return chart_list
+    the_sys_tab = the_db.get_table("sys_usage")
+    dframe = the_sys_tab.to_pandas()
+    dframe.iloc[:, 1] = dframe.iloc[:, 1].map(lambda x: datetime.datetime.fromtimestamp(x))
+    brush = alt.selection_interval(encodings=['x'])
+    brush2 = alt.selection_interval(encodings=['x'])
+    brush3 = alt.selection_interval(encodings=['x'])
+    brush4 = alt.selection_interval(encodings=['x'])
+    cpu_load_chart = make_cpu_load_chart(dframe)
+    load_avg_chart = make_load_avg_chart(dframe)
+    phys_mem_chart = make_phys_mem_chart(dframe)
+    swap_mem_chart = make_swap_mem_chart(dframe)
+    upper = alt.hconcat(phys_mem_chart, swap_mem_chart)
+    lower = alt.hconcat(cpu_load_chart, load_avg_chart)
+    final_chart = alt.vconcat(lower, upper)
+    
+    return(final_chart.to_json())
 
-def make_generic_circle_chart(dframe, x_col, x_type, y_col, y_type):
+def make_cpu_load_chart(dframe):
     """
-    Create a generic circle chart with the passed in dataframe, columns and column types.
+    Create the chart for visualizing CPU load.
 
     Args:
-        dframe: pandas dataframe with the desired data to create the chart
-        x_col: name of the x column in the dframe
-        x_type: type of x data ("Q", "T", "O", or "N")
-        y_col: name of the y column in the dframe
-        y_type: type of the y data ("Q", "T", "O" or "N")
+        dframe: pandas dframe from getpid --system database
+    Returns:
+        An Altair chart object with time on the x axis and cpu_load on the y axis
     """
-    ret_chart = alt.Chart(dframe).mark_circle().encode(
-        x=f'{x_col}:{x_type}',
-        y=f'{y_col}:{y_type}',
-        tooltip=[f'{x_col}:{x_type}', f'{y_col}:{y_type}']
+    num_cpus = dframe.iloc[0, 3]
+    the_chart = alt.Chart(dframe).mark_area(interpolate='linear').encode(
+        x=alt.X('yearmonthdatehoursminutes(real_time):T', title="Real Time",
+                    axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+        y=alt.Y('cpu_load:Q', title="CPU Load", scale=alt.Scale(domain=[0, num_cpus]), stack=None),
     )
-    return ret_chart.to_json()
+    return the_chart
+
+def make_load_avg_chart(dframe):
+    """
+    Create the chart for visualizing load average.
+
+    Args:
+        dframe: pandas dframe from getpid --system database
+    Returns:
+        An Altair chart object with time on the x axis and load average on the y axis
+    """
+    the_chart = alt.Chart(dframe).mark_area(interpolate='linear').encode(
+        x=alt.X('yearmonthdatehoursminutes(real_time):T', title="Real Time",
+                    axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+        y=alt.Y('load_avg:Q', title="Load Average", stack=None),
+    )
+    return the_chart
+
+def make_phys_mem_chart(dframe):
+    """
+    Create the chart for visualizing physical memory usage.
+
+    Args:
+        dframe: pandas dframe from getpid --system database
+    Returns:
+        An Altair chart object with time on the x axis and used and available memory usage on the y axis
+    """
+    real_time = dframe['real_time']
+    logic_time = dframe['logic_time']
+    used_phys_mem = dframe['used_phys_mem']
+    total_phys_mem = dframe['total_phys_mem']
+    new_dframe = pd.DataFrame({'real_time': real_time, 'logic_time': logic_time,
+                               'total_phys_mem': total_phys_mem, 'used_phys_mem': used_phys_mem})
+    dframe2 = new_dframe.melt(id_vars=['real_time', 'logic_time'], var_name='type', value_name='mem_usage')
+    the_chart = alt.Chart(dframe2).mark_area(interpolate='linear').encode(
+        x=alt.X('yearmonthdatehoursminutes(real_time):T', title="Real Time",
+                    axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+        y=alt.Y('mem_usage:Q', title="Physical Memory", stack=None),
+        color=alt.Color('type:O', scale=alt.Scale(range=['steelblue', 'salmon'])),
+    )
+    return the_chart
+
+def make_swap_mem_chart(dframe):
+    """
+    Create the chart for visualizing swap memory.
+
+    Args:
+        dframe: pandas dframe from getpid --system database
+    Returns:
+        An Altair chart object with time on the x axis and swap memory usage on the y axis
+    """
+    total_swap_mem = dframe.iloc[0, 8]
+    the_chart = alt.Chart(dframe).mark_area().encode(
+        x=alt.X('yearmonthdatehoursminutes(real_time):T', title="Real Time",
+                    axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+        y=alt.Y('used_swap_mem:Q', title="Swap Memory", scale=alt.Scale(domain=[0, total_swap_mem])),
+    )
+    return the_chart
