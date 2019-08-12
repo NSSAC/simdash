@@ -13,4 +13,4 @@ def test_route_():
 
     response = client.get("/")
     assert response.status_code == 200
-    assert b"<title>Embedding Vega-Lite</title>" in response.data
+    assert b"<title>Simdash Visualization Dashboard</title>" in response.data

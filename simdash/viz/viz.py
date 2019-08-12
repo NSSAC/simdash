@@ -2,7 +2,6 @@
 The visualization interface for creating charts from a database.
 """
 import datetime
-import os
 
 import altair as alt
 import pandas as pd
@@ -11,7 +10,7 @@ from ..database import database
 
 def make_pid_chart(db_name, table_name):
     """
-    Returns a CPU and memory chart directly from a getpid database.
+    Return a CPU and memory chart directly from a getpid database.
 
     Args:
         db_name: path to database file
@@ -23,20 +22,20 @@ def make_pid_chart(db_name, table_name):
     dframe.iloc[:, 1] = dframe.iloc[:, 1].map(lambda x: datetime.datetime.fromtimestamp(x))
     columns = list(dframe.columns)
     dframe2 = dframe.melt(id_vars=[columns[0], columns[1]], var_name='usage', value_name='percent')
-    
+
     some_chart = alt.Chart(dframe2).mark_line(interpolate='basis').encode(
-            x=alt.X('yearmonthdatehoursminutes(real_time):T', title="Real Time",
-                    axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
-            y=alt.Y('percent:Q', title="Percentage Used",
-                    axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
-            color=alt.Color('usage:O', scale=alt.Scale(range=['salmon', 'steelblue'])),
-            tooltip=['usage:O', 'real_time:T']
-        ).properties(width=650, height=400)
+        x=alt.X('yearmonthdatehoursminutes(real_time):T', title="Real Time",
+                axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+        y=alt.Y('percent:Q', title="Percentage Used",
+                axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+        color=alt.Color('usage:O', scale=alt.Scale(range=['salmon', 'steelblue'])),
+        tooltip=['usage:O', 'real_time:T']
+    ).properties(width=650, height=400)
     return some_chart.to_json()
 
 def get_pid_charts(db_name):
     """
-    Returns the a list of layered memory and cpu charts, one for every PID in the database.
+    Return a list of layered memory and cpu charts, one for every PID in the database.
 
     Args:
         db_name: path to the database file
@@ -58,10 +57,6 @@ def get_pid_charts(db_name):
             color=alt.Color('usage:O', scale=alt.Scale(range=['salmon', 'steelblue'])),
             tooltip=['usage:O', 'real_time:T']
         ).properties(width=650, height=400)
-        the_mem_chart = make_mem_chart(dframe)
-        the_cpu_chart = make_cpu_chart(dframe)
-        final_chart = alt.layer(the_cpu_chart, the_mem_chart).properties(width=650, height=400)
-        final_chart2 = final_chart & some_chart
         chart_list.append(some_chart.to_json())
     return chart_list
 
@@ -93,8 +88,8 @@ def make_cpu_chart(dframe):
 def get_system_charts(db_name):
     """
     Produce system charts from file where getpid --system is run.
-    
-    Produce charts for cpu load, average load, physical memory usage, and swap memory usage.
+
+    Make a four-panel of charts for cpu load, average load, physical memory usage, and swap memory usage.
     Args:
         db_name: Path to the database file
     Returns:
@@ -104,10 +99,6 @@ def get_system_charts(db_name):
     the_sys_tab = the_db.get_table("sys_usage")
     dframe = the_sys_tab.to_pandas()
     dframe.iloc[:, 1] = dframe.iloc[:, 1].map(lambda x: datetime.datetime.fromtimestamp(x))
-    brush = alt.selection_interval(encodings=['x'])
-    brush2 = alt.selection_interval(encodings=['x'])
-    brush3 = alt.selection_interval(encodings=['x'])
-    brush4 = alt.selection_interval(encodings=['x'])
     cpu_load_chart = make_cpu_load_chart(dframe)
     load_avg_chart = make_load_avg_chart(dframe)
     phys_mem_chart = make_phys_mem_chart(dframe)
@@ -115,8 +106,8 @@ def get_system_charts(db_name):
     upper = alt.hconcat(phys_mem_chart, swap_mem_chart)
     lower = alt.hconcat(cpu_load_chart, load_avg_chart)
     final_chart = alt.vconcat(lower, upper)
-    
-    return(final_chart.to_json())
+
+    return final_chart.to_json()
 
 def make_cpu_load_chart(dframe):
     """
@@ -130,7 +121,7 @@ def make_cpu_load_chart(dframe):
     num_cpus = dframe.iloc[0, 3]
     the_chart = alt.Chart(dframe).mark_area(interpolate='linear').encode(
         x=alt.X('yearmonthdatehoursminutes(real_time):T', title="Real Time",
-                    axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+                axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
         y=alt.Y('cpu_load:Q', title="CPU Load", scale=alt.Scale(domain=[0, num_cpus]), stack=None),
     )
     return the_chart
@@ -146,7 +137,7 @@ def make_load_avg_chart(dframe):
     """
     the_chart = alt.Chart(dframe).mark_area(interpolate='linear').encode(
         x=alt.X('yearmonthdatehoursminutes(real_time):T', title="Real Time",
-                    axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+                axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
         y=alt.Y('load_avg:Q', title="Load Average", stack=None),
     )
     return the_chart
@@ -169,7 +160,7 @@ def make_phys_mem_chart(dframe):
     dframe2 = new_dframe.melt(id_vars=['real_time', 'logic_time'], var_name='type', value_name='mem_usage')
     the_chart = alt.Chart(dframe2).mark_area(interpolate='linear').encode(
         x=alt.X('yearmonthdatehoursminutes(real_time):T', title="Real Time",
-                    axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+                axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
         y=alt.Y('mem_usage:Q', title="Physical Memory", stack=None),
         color=alt.Color('type:O', scale=alt.Scale(range=['steelblue', 'salmon'])),
     )
@@ -187,7 +178,7 @@ def make_swap_mem_chart(dframe):
     total_swap_mem = dframe.iloc[0, 8]
     the_chart = alt.Chart(dframe).mark_area().encode(
         x=alt.X('yearmonthdatehoursminutes(real_time):T', title="Real Time",
-                    axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
+                axis=alt.Axis(labelFontSize=12.0, titleFontSize=14.0)),
         y=alt.Y('used_swap_mem:Q', title="Swap Memory", scale=alt.Scale(domain=[0, total_swap_mem])),
     )
     return the_chart
