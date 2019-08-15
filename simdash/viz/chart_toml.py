@@ -11,7 +11,6 @@ from ..database import database
 def create_all_charts_from_toml(db_file, config_file):
     """
     Create Altair charts from a database and toml config file.
-
     Args:
         db_file: String of path to database file
         config_file: String of path to configuration file
@@ -37,7 +36,6 @@ def create_all_charts_from_toml(db_file, config_file):
 def create_toml_charts_without_encodings(db_file, config_file):
     """
     Create Altair Charts from a database and toml config file where encodings aren't specified.
-
     Args:
         db_file: path to database file
         config_file: path to Toml config file

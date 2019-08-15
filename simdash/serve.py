@@ -18,6 +18,8 @@ def display_from_config():
     """
     Display specified charts from config file.
     """
+    if CONFIG_PATH is None:
+        return render_template("no_config_child.html", on_config=True)
     chart_list = chart_toml.create_toml_charts_without_encodings(DB_PATH, CONFIG_PATH)
     num_list = list(range(len(chart_list)))
     return render_template("config_child.html", on_config=True, chart_list=chart_list, chart_label_list=num_list)
@@ -92,8 +94,11 @@ def display_sys_usage():
     """
     Display system usage charts from the database file.
     """
-    the_chart = viz.get_system_charts(DB_PATH)
-    return render_template("system_usage_child.html", the_chart=the_chart, on_sys_usage=True)
+    try:
+        the_chart = viz.get_system_charts(DB_PATH)
+        return render_template("system_usage_child.html", the_chart=the_chart, on_sys_usage=True)
+    except ValueError:
+        return render_template("no_sys_usage_chart.html", on_sys_usage=True)
 
 @cli_main.command()
 @click.option("-h", "--host", default="localhost",
