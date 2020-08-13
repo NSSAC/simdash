@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Simdash Visualization Dashboard</title>
+  </head>
+  <body>
+    <link rel="stylesheet" type="text/css" href={{ url_for('static', filename='dist/semantic.min.css') }}>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src={{ url_for('static', filename='dist/semantic.min.js') }}></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega@5.4.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@3.3.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@4.2.0"></script>
+    <div style="position: fixed; height:87px; width:100%; z-index:100">
+      <div style="background-color:DeepSkyBlue;">
+	<p align="left" style="color:white; font-size:35px;">SimDash</p>
+      </div>
+      <div class="ui five item menu" style="background-color:LightGray; position:absolute; top: 45px; margin-top:0px;">
+	<a class="{% if on_home %} active {% endif %} item" href={{ url_for('display_homepage') }}>Home</a>
+	<a class="{% if on_pids %} active {% endif %} item" href={{ url_for('display_pids') }}>PIDs</a>
+	<a class="{% if on_embed %} active {% endif %} item" href={{ url_for('display_embed') }}>Embed</a>
+	<div class=" ui dropdown item">
+	  System Information
+	  <i class="dropdown icon"></i>
+	  <div class="menu">
+	    <a class= "{% if on_sys_usage %} active {% endif %} item" data-value="sysusage"
+	       href={{ url_for('display_sys_usage') }}>System Usage</a>
+	    <a class="{% if on_pids %} active {% endif %} item" data-value="pids" href={{ url_for('display_pids') }}>PIDs</a>
+	  </div>
+	</div>
+	<a class="{% if on_config %} active {% endif %} item" href={{ url_for('display_from_config') }} >Config Display</a>
+      </div>
+    </div>
+    <div class="ui grid" style="position:absolute; top: 87px; width: 100%">
+      <div class="three wide column">
+	<div style="position: fixed; background-color:rgba(0,0,0,.87); height:100%; width:16%; margin-top:0px">
+	  {% block side_column %}
+	  <div class="ui checkbox">
+	    <input type="checkbox" name="thing" id="something">
+	    <label style="color:white;">Here is nnot a checkbox for some information</label>
+	  </div>
+	  <h1 style="color:white" href="">Something interesting</h1>
+	  <a class="item" style="color:white;" href="">Something else that's cool </a>
+	  <div class="ui checkbox">
+	    <input type="checkbox" name="thing1" id="something else">
+	    <label style="color:white">Here is another checkbox! </label>
+	  </div>
+	  <div class="ui toggle checkbox" style="z-index:100">
+	    <input type="checkbox">
+	  </div>
+	  <div class="ui checkbox">
+	    <input type="checkbox" name="checkbox3" id="checkbox3" style="z-index:100;">
+	    <label style="color:white;">Some Label</label>
+	  </div>
+	  <div class="ui submit">
+	    <input type="submit" value="sombit sumething">
+	  </div>
+	  {% endblock %}
+	</div>
+      </div>
+      <div class="ui centered twelve wide column">
+	{% block body_block %}
+	<h3> Here is some homepage text!</h3>
+	{% endblock %}
+      </div>
+    </div>
+    <script>
+      $('.ui.dropdown.item').dropdown();
+      $('.ui.checkbox').checkbox();
+    </script>
+  </body>
+</html>

@@ -16,7 +16,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
 
-    packages=[package_name],
+    packages=[package_name, "%s.database" % package_name, "%s.viz" %package_name],
     scripts=["bin/%s" % package_name],
 
     use_scm_version=True,
@@ -29,7 +29,9 @@ setup(
 
         "flask",
         "altair",
-        "pandas"
+        "pandas",
+
+        "toml",
     ],
 
     url="http://github.com/NSSAC/%s" % package_name,

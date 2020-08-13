@@ -1,0 +1,16 @@
+{% extends "toolbar_template.html" %}
+{% block side_column %}
+<div style="color:white; width:85%; text-align: center;">
+  <h3> Some interesting stuff goes here! <h3>
+</div>
+{% endblock %}
+{% block body_block %}
+{% for chart in chart_list %}
+<div id="vis{{ loop.index0 }}"></div>
+<script type="text/javascript">
+  var yourVlSpec = {{ chart|safe }}
+  vegaEmbed('#vis{{ loop.index0 }}', yourVlSpec);
+</script>
+<h3 style="text-align:center;">{{ chart_label_list[loop.index0] }}</h3>
+{% endfor %}
+{% endblock %}

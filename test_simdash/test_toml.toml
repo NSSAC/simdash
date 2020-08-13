@@ -1,0 +1,7 @@
+[[tab]]
+table_name = "test_toml_table"
+mark = "line"
+title = "My Test Table!"
+[tab.encode]
+x = "logic_time"
+y = "a"

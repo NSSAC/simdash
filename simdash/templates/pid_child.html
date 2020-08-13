@@ -1,0 +1,45 @@
+{% extends "toolbar_template.html" %}
+{% block side_column %}
+<br>
+<form method="POST" name="add_chart">
+  <div style="color:white;">
+    User: <input type="text" name="UserValue" style="width:100%;"><br>
+    PID: <input type="text" name="PIDValue" style="width:100%"><br><br>
+    <input type="submit" value="Add To Charts" style="width:85%">
+  </div>
+</form>
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for message in messages %}
+<h3 style="color:red">{{ message }}</h3>
+{% endfor %}
+{% endif %}
+{% endwith %}
+<div style="color:white; width:85%; text-align: center;">
+  <h3> Select Charts <h3>
+</div>
+<form method="POST" name="charts_info">
+  {% for item in chart_label_list %}
+  <div class="ui checkbox">
+    <input type="checkbox" name="chartcheck" value="{{item}}">
+    <label style="color:white"> {{item}}</label>
+  </div>
+  {% endfor %}
+<br><br>
+<input type="submit" value="Remove Selected" style="width:85%">
+</form>
+<br><br>
+<form method="POST" name="remove">
+  <input type="submit" value="Remove All" name="remove_all" style="width:85%">
+</form>
+{% endblock %}
+{% block body_block %}
+{% for chart in chart_list %}
+<div id="vis{{ loop.index0 }}"></div>
+<script type="text/javascript">
+  var yourVlSpec = {{ chart|safe }}
+  vegaEmbed('#vis{{ loop.index0 }}', yourVlSpec);
+</script>
+<h3 style="text-align:center;">{{ chart_label_list[loop.index0] }}</h3>
+{% endfor %}
+{% endblock %}
